@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,9 +23,9 @@ interface Deal {
   brand: string;
   category: string;
   description: string;
-  original_price: number;
-  deal_price: number;
-  discount_percentage: number;
+  original_price: any;
+  deal_price: any;
+  discount_percentage: any;
   merchant: string;
   image_url: string;
   upvotes: number;
@@ -47,7 +47,6 @@ const DealsScreen: React.FC = () => {
 
   const categories = ['Mobiles', 'Laptops', 'Audio', 'Gaming', 'Cameras'];
 
-  // Mock data
   const mockDeals: Deal[] = [
     {
       id: '1',
@@ -91,21 +90,33 @@ const DealsScreen: React.FC = () => {
     loadDeals();
   }, []);
 
+  const sanitizeDeals = (data: Deal[]): Deal[] => {
+    return data.filter(deal =>
+      !isNaN(Number(deal.deal_price)) &&
+      !isNaN(Number(deal.original_price)) &&
+      !isNaN(Number(deal.discount_percentage))
+    );
+  };
+
   const loadDeals = async () => {
     setLoading(true);
-    // Simulate API call
     setTimeout(() => {
-      setDeals(mockDeals);
+      setDeals(sanitizeDeals(mockDeals));
       setLoading(false);
     }, 1000);
   };
 
-  const formatPrice = (price: number): string => {
+  const formatPrice = (price: any): string => {
+    const num = Number(price);
+    if (isNaN(num) || !isFinite(num)) {
+      console.warn('Invalid price value:', price);
+      return '₹0';
+    }
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 0,
-    }).format(price);
+    }).format(num);
   };
 
   const handleVote = (dealId: string, voteType: 'up' | 'down') => {
@@ -129,7 +140,7 @@ const DealsScreen: React.FC = () => {
 
   const filteredDeals = deals.filter(deal => {
     const matchesSearch = deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         deal.brand.toLowerCase().includes(searchQuery.toLowerCase());
+      deal.brand.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || deal.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -148,19 +159,21 @@ const DealsScreen: React.FC = () => {
 
       <View style={styles.dealContent}>
         <Image source={{ uri: deal.image_url }} style={styles.dealImage} />
-        
+
         <View style={styles.dealInfo}>
           <Text style={styles.dealTitle} numberOfLines={2}>
             {deal.title}
           </Text>
-          
+
           <View style={styles.priceContainer}>
             <Text style={styles.dealPrice}>{formatPrice(deal.deal_price)}</Text>
-            {deal.original_price > deal.deal_price && (
+            {Number(deal.original_price) > Number(deal.deal_price) && (
               <Text style={styles.originalPrice}>{formatPrice(deal.original_price)}</Text>
             )}
             <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>{deal.discount_percentage}% OFF</Text>
+              <Text style={styles.discountText}>
+                {Number.isFinite(Number(deal.discount_percentage)) ? `${deal.discount_percentage}% OFF` : ''}
+              </Text>
             </View>
           </View>
 
@@ -183,7 +196,9 @@ const DealsScreen: React.FC = () => {
               >
                 <Ionicons name="thumbs-up-outline" size={16} color="#10b981" />
               </TouchableOpacity>
-              <Text style={styles.voteCount}>{deal.upvotes - deal.downvotes}</Text>
+              <Text style={styles.voteCount}>
+                {Number.isFinite(deal.upvotes - deal.downvotes) ? (deal.upvotes - deal.downvotes) : 0}
+              </Text>
               <TouchableOpacity
                 style={styles.voteButton}
                 onPress={() => handleVote(deal.id, 'down')}
@@ -199,7 +214,6 @@ const DealsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>SpicyBeats</Text>
         <TouchableOpacity>
@@ -207,7 +221,6 @@ const DealsScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Search */}
       <Searchbar
         placeholder="Search electronics deals..."
         onChangeText={setSearchQuery}
@@ -215,7 +228,6 @@ const DealsScreen: React.FC = () => {
         style={styles.searchBar}
       />
 
-      {/* Categories */}
       <View style={styles.categoriesContainer}>
         <FlatList
           horizontal
@@ -235,19 +247,15 @@ const DealsScreen: React.FC = () => {
         />
       </View>
 
-      {/* Deals List */}
       <FlatList
         data={filteredDeals}
         keyExtractor={(item) => item.id}
         renderItem={renderDealCard}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={loadDeals} />
-        }
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadDeals} />}
         contentContainerStyle={styles.dealsList}
         showsVerticalScrollIndicator={false}
       />
 
-      {/* FAB for adding deals */}
       <FAB
         icon="plus"
         style={styles.fab}
@@ -257,7 +265,9 @@ const DealsScreen: React.FC = () => {
   );
 };
 
+// Styles remain unchanged...
 const styles = StyleSheet.create({
+  // ... your same styles
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',

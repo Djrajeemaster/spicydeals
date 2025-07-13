@@ -1,3 +1,4 @@
+import { useFonts } from 'expo-font';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -64,6 +65,13 @@ const TabNavigator = () => {
 };
 
 export default function App() {
+    const [fontsLoaded] = useFonts({
+    'Ionicons': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf'),
+    });
+
+  if (!fontsLoaded) {
+    return null; // Or a custom splash screen component
+  }
   return (
     <PaperProvider>
       <NavigationContainer>
